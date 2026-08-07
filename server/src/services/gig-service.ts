@@ -42,7 +42,6 @@ import {
   rollGigOutcome,
 } from "../game/gigs";
 import { calculateGigSuccessBonus } from "../game/chrome";
-import { GIG_TEMPLATES } from "../game/gig-templates";
 import { ensureWallet } from "./economy-service";
 import { transferEddies } from "../game/economy";
 import { emitEvent } from "../telemetry/emit-event";
@@ -745,22 +744,4 @@ export async function getGigHistory(
     history,
     nextCursor: hasMore ? page[page.length - 1].completedAt.toISOString() : null,
   };
-}
-
-/**
- * Seed the static gig catalog from game/gig-templates.ts. No-op when the
- * table already has rows; per-name conflicts are skipped (idempotent).
- */
-export async function seedGigTemplates(): Promise<number> {
-  const [existing] = await db.select({ count: sql<number>`count(*)::int` }).from(gigs);
-  if ((existing?.count ?? 0) > 0) return 0;
-
-  const rows = GIG_TEMPLATES.map((t) => ({
-    ...t,
-    // Per-tier cooldown: T1 refreshes fast, T2 keeps you out of the same play.
-    cooldownMinutes: t.tier === "t1" ? 10 : 25,
-  }));
-
-  const inserted = await db.insert(gigs).values(rows).onConflictDoNothing().returning({ id: gigs.id });
-  return inserted.length;
 }

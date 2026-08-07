@@ -110,7 +110,7 @@ describe("ND-016 — Crews Básicas API", () => {
     return { accessToken, characterId: character.id, characterName };
   }
 
-  /** Seed a wallet with the given balance (ensureWallet creates it with 1000). */
+  /** Seed a wallet with the given balance (ensureWallet creates it with 500). */
   async function seedWallet(characterId: string, balance: number): Promise<void> {
     await db.transaction(async (tx) => {
       await ensureWallet(characterId, tx);
@@ -432,18 +432,28 @@ describe("ND-016 — Crews Básicas API", () => {
       const leader = await registerApiUser();
       await makeFounder(leader);
 
-      // Both requests read the same wallet version; the loser's version-guarded
-      // UPDATE matches nothing → 409 (either CONCURRENCY_CONFLICT or
-      // ALREADY_IN_CREW, depending on which check the loser trips first).
+      // Both requests race the same wallet. Only one may win (201); the loser
+      // trips whichever guard it reaches first after the winner commits: the
+      // version-guarded debit (409 CONCURRENCY_CONFLICT), the affiliation
+      // guard (409 ALREADY_IN_CREW), the name/tag uniqueness guard (409
+      // DUPLICATE_*) or its own funds check seeing the winner's debit (400
+      // INSUFFICIENT_FUNDS).
       const [a, b] = await Promise.all([
         createCrew(leader, "Blade Runners", "BLD"),
         createCrew(leader, "Blade Runners", "BLD"),
       ]);
 
       const statuses = [a.status, b.status].sort();
-      expect(statuses).toEqual([201, 409]);
-      const loser = a.status === 409 ? (a.body as ErrorBody) : (b.body as ErrorBody);
-      expect(["CONCURRENCY_CONFLICT", "ALREADY_IN_CREW"]).toContain(loser.error);
+      expect(statuses[0]).toBe(201);
+      expect([400, 409]).toContain(statuses[1]);
+      const loser = a.status === 201 ? b : a;
+      expect([
+        "CONCURRENCY_CONFLICT",
+        "ALREADY_IN_CREW",
+        "DUPLICATE_NAME",
+        "DUPLICATE_TAG",
+        "INSUFFICIENT_FUNDS",
+      ]).toContain((loser.body as ErrorBody).error);
       // Exactly one crew + one CREW_CREATION audit entry exist.
       const crewRows = await db.select().from(crews).where(eq(crews.name, "Blade Runners"));
       expect(crewRows).toHaveLength(1);

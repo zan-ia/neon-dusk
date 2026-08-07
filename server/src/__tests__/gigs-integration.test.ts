@@ -23,9 +23,9 @@ import {
   getGigDetail,
   getGigHistory,
   listAvailableGigs,
-  seedGigTemplates,
   wrapUpGig,
 } from "../services/gig-service";
+import { seedGigs } from "../db/seed";
 import type {
   ActiveGig,
   AuthResponse,
@@ -77,7 +77,7 @@ describe("ND-011 — gigs service & API", () => {
     redis.disconnect();
 
     app = await buildApp({ env: envSchema.parse({ ...process.env, REDIS_URL: REDIS_TEST_DB }) });
-    await seedGigTemplates();
+    await seedGigs();
   });
 
   afterAll(async () => {
@@ -110,14 +110,14 @@ describe("ND-011 — gigs service & API", () => {
       .where(eq(activeGigs.characterId, characterId));
   }
 
-  describe("seedGigTemplates", () => {
+  describe("gig catalog seeding (db/seed)", () => {
     it("should seed the 10 static templates into the gigs table", async () => {
       const rows = await db.select().from(gigs);
       expect(rows).toHaveLength(10);
     });
 
-    it("should be idempotent — a second call is a no-op", async () => {
-      expect(await seedGigTemplates()).toBe(0);
+    it("should be idempotent — a second run inserts nothing", async () => {
+      expect(await seedGigs()).toBe(0);
       const rows = await db.select().from(gigs);
       expect(rows).toHaveLength(10);
     });
@@ -640,7 +640,7 @@ describe("ND-011 — gigs service & API", () => {
       expect(res.streetCredGained).toBeGreaterThanOrEqual(1); // T1 range [1,3]
       expect(res.streetCredGained).toBeLessThanOrEqual(3);
       expect(res.heatAccumulated).toBe(5);
-      expect(res.newBalance).toBe(1660); // 1000 seed + 660
+      expect(res.newBalance).toBe(1160); // 500 seed + 660
 
       // Active gig is closed.
       expect(await getActiveGig(characterId)).toBeNull();
@@ -678,8 +678,8 @@ describe("ND-011 — gigs service & API", () => {
         .where(and(eq(transactionLog.characterId, characterId), eq(transactionLog.type, "GIG_PAYOUT")));
       expect(log).toMatchObject({
         amount: 660,
-        balanceBefore: 1000,
-        balanceAfter: 1660,
+        balanceBefore: 500,
+        balanceAfter: 1160,
         referenceType: "gig",
       });
     });
@@ -696,7 +696,7 @@ describe("ND-011 — gigs service & API", () => {
       expect(res.payout).toBe(0);
       expect(res.streetCredGained).toBe(0);
       expect(res.heatAccumulated).toBe(10); // 5 × 2
-      expect(res.newBalance).toBe(1000); // no credit
+      expect(res.newBalance).toBe(500); // no credit
 
       const [history] = await db
         .select()
@@ -1204,7 +1204,7 @@ describe("ND-011 — gigs service & API", () => {
       expect(body.outcome).toBe(execOutcome.success ? "success" : "failure");
       expect(body.payout).toBe(execOutcome.success ? 660 : 0); // 500 × 1.2 × 1.1
       expect(body.heatAccumulated).toBe(execOutcome.success ? 5 : 10);
-      expect(body.newBalance).toBe(execOutcome.success ? 1660 : 1000);
+      expect(body.newBalance).toBe(execOutcome.success ? 1160 : 500);
     });
 
     it("should return 409 INVALID_PHASE_TRANSITION before the escape phase", async () => {

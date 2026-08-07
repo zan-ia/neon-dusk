@@ -372,7 +372,7 @@ export const installedChrome = pgTable(
 );
 
 // --- Gigs (Feature #4 / ND-011) ---------------------------------------------
-// Static gig catalog (seeded from game/gig-templates.ts), one active gig per
+// Static gig catalog (seeded from content/gig-templates.ts), one active gig per
 // character, an append-only history and per-district heat accumulation.
 
 export const gigs = pgTable(

@@ -1,51 +1,34 @@
-import type { GigTier, GigType } from "./gigs";
-
-// Neon Dusk — Gig Template Seeds (ND-011)
+// Neon Dusk — Gig Template Seeds (ND-054 Data Seeding)
 // ============================================================================
 // 10 hand-crafted gig templates for MVP T1-T2.
 // 6 × T1 (SC 0+), 4 × T2 (SC 5+).
 // Types: 4 extraction, 3 delivery, 3 sabotage.
-// Districts spread across: A Paraíso, O Fervo, O Fluxo, A Quebrada, Babilônia.
+// Districts spread across: O Fluxo, A Paraíso, O Fervo, A Quebrada, Babilônia.
 //
 // Balance anchors (03-mecanicas-core.md §2, 04-sistemas-e-progressao.md §5):
 //   T1 payout 500-1500, NIL 10-15, difficulty 30-55
 //   T2 payout 2000-6000, NIL 15-25, difficulty 50-75
 //   requiredStats achievable by optimized starting chars (max 8 T1, max 10 T2)
+//
+// cooldownMinutes is NOT included — the seed script derives it (T1=10, T2=25).
 
-/** Static seed data for a gig template (used to spawn gig instances). */
+/** Static seed data for a gig template. */
 export interface GigTemplateSeed {
-  /** Display name in Portuguese. */
   name: string;
-  /** Cyberpunk-flavor description in Portuguese. */
   description: string;
-  tier: GigTier;
-  type: GigType;
-  /** District where this gig takes place. */
+  tier: 't1' | 't2';
+  type: 'extraction' | 'delivery' | 'sabotage';
   district: string;
-  /** Execute-phase difficulty (30-55 T1, 50-75 T2). */
   difficulty: number;
-  /** Escape-phase difficulty. */
   escapeDifficulty: number;
-  /** Sparse attribute requirements (e.g. { body: 5, reflexes: 3 }). */
   requiredStats: Record<string, number>;
-  /** Minimum street cred to unlock this gig. */
   requiredStreetCred: number;
-  /** Base eddie reward (before modifiers). */
   baseReward: number;
-  /** NIL cost to start the gig. */
   nilCost: number;
-  /** Base heat generated on success. */
   heatGenerated: number;
-  /** Legwork phase duration in minutes. */
   legworkMinutes: number;
 }
 
-/**
- * All 10 gig template seeds.
- *
- * T1 (6 gigs): Street Level — accessible from SC 0.
- * T2 (4 gigs): Runner — accessible from SC 5.
- */
 export const GIG_TEMPLATES: GigTemplateSeed[] = [
   // ═══ T1 — Street Level (SC 0+) ═══════════════════════════════════════════
 

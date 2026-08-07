@@ -38,11 +38,13 @@ const REDIS_TEST_DB = "redis://localhost:56379/6";
 const DOC_FIOS_ID = "00000000-0000-4000-8000-000000000001";
 const ZERO_ID = "00000000-0000-0000-0000-000000000000";
 
-// Vendor price = base price (migration), stock -1 = unlimited.
+// Vendor prices are test fixtures sized so the 500-eddie seed wallet can
+// afford the starter implants (real market prices live in content/*). stock
+// -1 = unlimited.
 const INVENTORY: { itemId: string; price: number }[] = [
-  { itemId: "neural-booster", price: 800 },
-  { itemId: "reflex-tuner", price: 800 },
-  { itemId: "kiroshi-optics", price: 900 },
+  { itemId: "neural-booster", price: 300 },
+  { itemId: "reflex-tuner", price: 300 },
+  { itemId: "kiroshi-optics", price: 400 },
   { itemId: "gorilla-arms", price: 2500 },
   { itemId: "subdermal-armor", price: 2000 },
 ];
@@ -272,7 +274,7 @@ describe("Feature #4 — chrome API", () => {
       expect(body.statBonus).toEqual({
         body: 0,
         reflexes: 0,
-        intelligence: 1,
+        intelligence: 2, // neural-booster grants +2 INT (content/chrome-definitions.ts)
         technical: 0,
         cool: 0,
       });
@@ -300,7 +302,7 @@ describe("Feature #4 — chrome API", () => {
       expect(body.installedChrome.definition.slug).toBe("neural-booster");
       expect(body.installedChrome.installedId).toBeTruthy();
       expect(body.effectiveHumanity).toBe(97); // 100 - 3
-      expect(body.walletBalance).toBe(200); // 1000 - 800
+      expect(body.walletBalance).toBe(200); // 500 - 300
     });
 
     it("should reject a second install of the same chrome with 409", async () => {
@@ -348,7 +350,7 @@ describe("Feature #4 — chrome API", () => {
 
     it("should return 400 INSUFFICIENT_FUNDS when the wallet cannot cover the price", async () => {
       const { accessToken } = await registerAndCreateCharacter();
-      // Gorilla Arms = 2500 eddies > 1000 seed balance.
+      // Gorilla Arms = 2500 eddies > 500 seed balance.
       const res = await installChrome(accessToken, await defId("gorilla-arms"));
 
       expect(res.status).toBe(400);
@@ -358,7 +360,7 @@ describe("Feature #4 — chrome API", () => {
 
     it("should return 400 HUMANITY_TOO_LOW when humanity would drop below 0", async () => {
       const { accessToken, characterId } = await registerAndCreateCharacter();
-      // Reflex Tuner costs 3 humanity and 800 eddies. At 2 humanity it would go to -1.
+      // Reflex Tuner costs 3 humanity and 300 eddies. At 2 humanity it would go to -1.
       await db
         .update(characters)
         .set({ humanity: 2 })
@@ -441,7 +443,7 @@ describe("Feature #4 — chrome API", () => {
         .where(eq(installedChrome.characterId, characterId));
       expect(loadout).toHaveLength(0);
 
-      // No refund — wallet stays at 200 (the balance after the 800-eddie purchase).
+      // No refund — wallet stays at 200 (the balance after the 300-eddie purchase).
       const balance = await fetch(`${base()}/api/economy/balance`, {
         headers: authHeader(accessToken),
       });
@@ -532,8 +534,8 @@ describe("Feature #4 — chrome API", () => {
           ),
         );
       expect(log).toMatchObject({
-        amount: -800,
-        balanceBefore: 1000,
+        amount: -300,
+        balanceBefore: 500,
         balanceAfter: 200,
       });
     });
@@ -572,7 +574,7 @@ describe("Feature #4 — chrome API", () => {
       const balance = await fetch(`${base()}/api/economy/balance`, {
         headers: authHeader(accessToken),
       });
-      expect((await json<{ balance: number }>(balance)).balance).toBe(1000);
+      expect((await json<{ balance: number }>(balance)).balance).toBe(500);
     });
 
     it("should let exactly one of two concurrent installs win, with a single debit", async () => {
@@ -604,7 +606,7 @@ describe("Feature #4 — chrome API", () => {
           ),
         );
       expect(purchases).toHaveLength(1);
-      expect(purchases[0].amount).toBe(-800);
+      expect(purchases[0].amount).toBe(-300);
 
       const [character] = await db
         .select({ humanity: characters.humanity })

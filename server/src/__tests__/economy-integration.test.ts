@@ -139,9 +139,9 @@ describe("Feature #3 — economy & vendors API", () => {
 
       expect(res.status).toBe(200);
       const body = await json<EconomyBalanceResponse>(res);
-      expect(body.balance).toBe(1000);
+      expect(body.balance).toBe(500);
       expect(body.escrow).toBe(0);
-      expect(body.lifetimeEarned).toBe(1000);
+      expect(body.lifetimeEarned).toBe(500);
       expect(body.lifetimeSpent).toBe(0);
     });
 
@@ -183,7 +183,7 @@ describe("Feature #3 — economy & vendors API", () => {
       const body = await json<TransactionListResponse>(res);
       expect(body.transactions.length).toBeGreaterThanOrEqual(1);
       expect(body.transactions[0].type).toBe("ADMIN_ADJUSTMENT");
-      expect(body.transactions[0].amount).toBe(1000);
+      expect(body.transactions[0].amount).toBe(500);
       expect(body.nextCursor).toBeNull(); // single page — no more data
     });
 
@@ -346,8 +346,8 @@ describe("Feature #3 — economy & vendors API", () => {
       expect(res.status).toBe(200);
       const body = await json<BuyResponse>(res);
       expect(body.success).toBe(true);
-      expect(body.balanceBefore).toBe(1000);
-      expect(body.balanceAfter).toBe(800);
+      expect(body.balanceBefore).toBe(500);
+      expect(body.balanceAfter).toBe(300);
       expect(body.item).toEqual({
         itemType: ITEM_TYPE,
         itemId: ITEM_ID,
@@ -396,7 +396,7 @@ describe("Feature #3 — economy & vendors API", () => {
 
     it("should return 400 INSUFFICIENT_FUNDS when the wallet cannot cover the price", async () => {
       const accessToken = await registerAndCreateCharacter();
-      // 8 × 200 = 1600 > 1000 seed balance, stock 10 allows the quantity.
+      // 8 × 200 = 1600 > 500 seed balance, stock 10 allows the quantity.
       const vendorId = await seedVendor({ price: 200, stock: 10 });
 
       const res = await server.post(

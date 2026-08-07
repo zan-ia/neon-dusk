@@ -1,20 +1,9 @@
 import { env } from "./env";
 import { buildApp } from "./app";
-import { seedGigTemplates } from "./services/gig-service";
 import { startRoundCheckCron } from "./cron/round-check";
 
 async function main() {
   const app = await buildApp({ env });
-
-  // Seed the static gig catalog (Fixer Cupim board) on boot. Best-effort:
-  // when migrations have not run yet the table is missing and the server
-  // still comes up — the seed simply runs again on the next restart.
-  try {
-    const seeded = await seedGigTemplates();
-    if (seeded > 0) app.log.info(`Seeded ${seeded} gig templates`);
-  } catch (err) {
-    app.log.warn({ err }, "Gig template seed skipped (is the DB migrated?)");
-  }
 
   const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
 

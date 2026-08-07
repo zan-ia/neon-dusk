@@ -64,7 +64,7 @@ describe("economy integrity", () => {
       const a = await insertTestCharacter();
       const b = await insertTestCharacter();
 
-      // Seed both wallets (2 × 1000 injected).
+      // Seed both wallets (2 × 500 injected).
       for (const { characterId } of [a, b]) {
         await db.transaction((tx) => ensureWallet(characterId, tx));
       }
@@ -76,8 +76,8 @@ describe("economy integrity", () => {
       const wallets = await db.select().from(characterWallets);
       const totalBalance = wallets.reduce((acc, w) => acc + w.balance, 0);
 
-      // Injected: 2000 (seed) + 300 (A earns) + 100 (B reward). Spent: 100 (A loss).
-      expect(totalBalance).toBe(2000 + 300 + 100 - 100);
+      // Injected: 1000 (seed) + 300 (A earns) + 100 (B reward). Spent: 100 (A loss).
+      expect(totalBalance).toBe(1000 + 300 + 100 - 100);
 
       // And the sum of every transaction amount matches the sum of balances.
       const [{ txSum }] = await db.select({
@@ -92,7 +92,7 @@ describe("economy integrity", () => {
       const { characterId } = await insertTestCharacter();
       await db.transaction((tx) => ensureWallet(characterId, tx));
 
-      // 10 concurrent +20 transfers on a wallet starting at 1000.
+      // 10 concurrent +20 transfers on a wallet starting at 500.
       const results = await Promise.allSettled(
         Array.from({ length: 10 }, (_, i) => transfer(characterId, 20, "GIG_PAYOUT", `race-${i}`)),
       );
@@ -101,8 +101,8 @@ describe("economy integrity", () => {
       // Whatever the retry outcome, no eddies are created or destroyed:
       // balance reflects exactly the successful transfers.
       const wallet = await getWallet(characterId);
-      expect(wallet.balance).toBe(1000 + 20 * succeeded);
-      expect(wallet.lifetimeEarned).toBe(1000 + 20 * succeeded);
+      expect(wallet.balance).toBe(500 + 20 * succeeded);
+      expect(wallet.lifetimeEarned).toBe(500 + 20 * succeeded);
       expect(wallet.version).toBe(succeeded); // one bump per successful write
     });
 
@@ -159,7 +159,7 @@ describe("economy integrity", () => {
       }, 0);
 
       const wallet = await getWallet(characterId);
-      expect(wallet.balance).toBe(1000 + net);
+      expect(wallet.balance).toBe(500 + net);
       expect(wallet.balance).toBeGreaterThanOrEqual(0);
     });
   });
@@ -199,7 +199,7 @@ describe("economy integrity", () => {
 
         // Wallet untouched — the debit was rolled back.
         const wallet = await getWallet(characterId);
-        expect(wallet.balance).toBe(1000);
+        expect(wallet.balance).toBe(500);
         expect(wallet.version).toBe(0);
 
         // No audit entry for the aborted purchase.
@@ -261,7 +261,7 @@ describe("economy integrity", () => {
 
       // State is exactly consistent with `ok` landed purchases.
       const wallet = await getWallet(characterId);
-      expect(wallet.balance).toBe(1000 - 100 * ok);
+      expect(wallet.balance).toBe(500 - 100 * ok);
       expect(wallet.version).toBe(ok);
 
       const purchases = await db

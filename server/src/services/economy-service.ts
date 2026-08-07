@@ -18,7 +18,7 @@ import { calculatePrice, transferEddies, type WalletState } from "../game/econom
 // writers get a CONCURRENCY error and the caller retries.
 
 /** Seed capital granted when a character's wallet is first created. */
-const INITIAL_BALANCE = 1000;
+const INITIAL_BALANCE = 500;
 /** Max attempts for optimistic-lock write retries (exponential backoff). */
 const MAX_RETRIES = 3;
 

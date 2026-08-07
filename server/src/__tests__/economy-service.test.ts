@@ -36,19 +36,19 @@ describe("economy service", () => {
   });
 
   describe("ensureWallet", () => {
-    it("should create a wallet with seed capital (1000) for a new character", async () => {
+    it("should create a wallet with seed capital (500) for a new character", async () => {
       const { characterId } = await insertTestCharacter();
 
       const wallet = await db.transaction((tx) => ensureWallet(characterId, tx));
 
-      expect(wallet.balance).toBe(1000);
-      expect(wallet.lifetimeEarned).toBe(1000);
+      expect(wallet.balance).toBe(500);
+      expect(wallet.lifetimeEarned).toBe(500);
       expect(wallet.lifetimeSpent).toBe(0);
       expect(wallet.escrow).toBe(0);
       expect(wallet.version).toBe(0);
     });
 
-    it("should record an ADMIN_ADJUSTMENT seed transaction with balance_before 0 and balance_after 1000", async () => {
+    it("should record an ADMIN_ADJUSTMENT seed transaction with balance_before 0 and balance_after 500", async () => {
       const { characterId } = await insertTestCharacter();
 
       await db.transaction((tx) => ensureWallet(characterId, tx));
@@ -60,9 +60,9 @@ describe("economy service", () => {
 
       expect(seed).toMatchObject({
         type: "ADMIN_ADJUSTMENT",
-        amount: 1000,
+        amount: 500,
         balanceBefore: 0,
-        balanceAfter: 1000,
+        balanceAfter: 500,
         source: "Initial seed capital",
       });
     });
@@ -89,7 +89,7 @@ describe("economy service", () => {
 
       expect(wallets).toHaveLength(1);
       expect(seeds).toHaveLength(1);
-      expect(second.balance).toBe(1000);
+      expect(second.balance).toBe(500);
     });
   });
 
@@ -100,8 +100,8 @@ describe("economy service", () => {
 
       const wallet = await getWallet(characterId);
 
-      expect(wallet.balance).toBe(1000);
-      expect(wallet.lifetimeEarned).toBe(1000);
+      expect(wallet.balance).toBe(500);
+      expect(wallet.lifetimeEarned).toBe(500);
       expect(wallet.version).toBe(0);
     });
 
@@ -114,7 +114,7 @@ describe("economy service", () => {
         .from(characterWallets)
         .where(eq(characterWallets.characterId, characterId));
 
-      expect(wallet.balance).toBe(1000);
+      expect(wallet.balance).toBe(500);
       expect(stored).toHaveLength(1);
     });
 
@@ -126,8 +126,8 @@ describe("economy service", () => {
 
       const wallet = await getWallet(characterId);
 
-      expect(wallet.balance).toBe(1300);
-      expect(wallet.lifetimeEarned).toBe(1500);
+      expect(wallet.balance).toBe(800); // 500 seed + 500 payout - 200 purchase
+      expect(wallet.lifetimeEarned).toBe(1000);
       expect(wallet.lifetimeSpent).toBe(200);
     });
   });
@@ -139,13 +139,13 @@ describe("economy service", () => {
 
       const { wallet, transaction } = await transfer(characterId, 250, "GIG_PAYOUT", "gig-1");
 
-      expect(wallet.balance).toBe(1250);
-      expect(wallet.lifetimeEarned).toBe(1250);
+      expect(wallet.balance).toBe(750);
+      expect(wallet.lifetimeEarned).toBe(750);
       expect(wallet.lifetimeSpent).toBe(0);
       expect(wallet.version).toBe(1);
       expect(transaction.amount).toBe(250);
-      expect(transaction.balanceBefore).toBe(1000);
-      expect(transaction.balanceAfter).toBe(1250);
+      expect(transaction.balanceBefore).toBe(500);
+      expect(transaction.balanceAfter).toBe(750);
       expect(transaction.type).toBe("GIG_PAYOUT");
     });
 
@@ -155,8 +155,8 @@ describe("economy service", () => {
 
       const { wallet } = await transfer(characterId, -150, "VENDOR_PURCHASE", "vendor");
 
-      expect(wallet.balance).toBe(850);
-      expect(wallet.lifetimeEarned).toBe(1000);
+      expect(wallet.balance).toBe(350);
+      expect(wallet.lifetimeEarned).toBe(500);
       expect(wallet.lifetimeSpent).toBe(150);
     });
 
@@ -181,8 +181,8 @@ describe("economy service", () => {
       expect(log).toMatchObject({
         characterId,
         amount: -120,
-        balanceBefore: 1000,
-        balanceAfter: 880,
+        balanceBefore: 500,
+        balanceAfter: 380,
         source: "vendor",
         referenceType: "vendor",
         referenceId: "11111111-2222-4333-8444-555555555555",
@@ -224,7 +224,7 @@ describe("economy service", () => {
 
       expect(a.wallet.version + b.wallet.version).toBe(3); // versions 1 and 2
       const wallet = await getWallet(characterId);
-      expect(wallet.balance).toBe(1150); // 1000 + 100 + 50, no lost update
+      expect(wallet.balance).toBe(650); // 500 + 100 + 50, no lost update
     });
 
     it("should return 409 CONCURRENCY_CONFLICT after max retries are exhausted", async () => {
@@ -252,7 +252,7 @@ describe("economy service", () => {
 
       // No eddies lost: balance reflects exactly the successful transfers.
       const wallet = await getWallet(characterId);
-      expect(wallet.balance).toBe(1000 + 10 * ok.length);
+      expect(wallet.balance).toBe(500 + 10 * ok.length);
       expect(wallet.version).toBe(ok.length);
     });
   });
@@ -407,8 +407,8 @@ describe("economy service", () => {
 
       const result = await buyFromVendor(characterId, vendorId, "weapon", "nova-9", 2);
 
-      expect(result.balanceBefore).toBe(1000);
-      expect(result.balanceAfter).toBe(800);
+      expect(result.balanceBefore).toBe(500);
+      expect(result.balanceAfter).toBe(300);
       expect(result.item).toEqual({
         itemType: "weapon",
         itemId: "nova-9",
@@ -448,8 +448,8 @@ describe("economy service", () => {
 
       expect(log).toMatchObject({
         amount: -100,
-        balanceBefore: 1000,
-        balanceAfter: 900,
+        balanceBefore: 500,
+        balanceAfter: 400,
       });
     });
 
@@ -458,7 +458,7 @@ describe("economy service", () => {
 
       const result = await buyFromVendor(characterId, vendorId, "weapon", "nova-9", 50);
 
-      expect(result.balanceAfter).toBe(1000 - 10 * 50);
+      expect(result.balanceAfter).toBe(500 - 10 * 50);
       const [row] = await db
         .select()
         .from(vendorInventory)
@@ -534,10 +534,10 @@ describe("economy service", () => {
 
     it("should account for escrow when checking funds", async () => {
       const { characterId, vendorId } = await seedStore({ price: 800 });
-      // Balance is 1000 but 700 is committed to escrow → only 300 available.
+      // Balance is 500 but 300 is committed to escrow → only 200 available.
       await db
         .update(characterWallets)
-        .set({ escrow: 700 })
+        .set({ escrow: 300 })
         .where(eq(characterWallets.characterId, characterId));
 
       await expect(

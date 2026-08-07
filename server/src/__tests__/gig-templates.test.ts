@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { GIG_TEMPLATES } from "../game/gig-templates";
+import { GIG_TEMPLATES } from "../content/gig-templates";
 import type { GigType } from "../game/gigs";
 
 // ND-011 — seed data integrity for the 10 hand-crafted gig templates.

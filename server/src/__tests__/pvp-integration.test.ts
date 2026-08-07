@@ -144,7 +144,7 @@ describe("ND-014 — PvP combat API", () => {
     return { userId: auth.user.id, characterId: character.id, accessToken: auth.accessToken };
   }
 
-  /** Seed a wallet with the given balance (ensureWallet creates it with 1000). */
+  /** Seed a wallet with the given balance (ensureWallet creates it with 500). */
   async function seedWallet(characterId: string, balance: number): Promise<void> {
     await db.transaction(async (tx) => {
       await ensureWallet(characterId, tx);
