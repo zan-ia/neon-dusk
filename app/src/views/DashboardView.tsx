@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import type { AttributeKey } from "@neon-dusk/shared";
+import type { AttributeKey, RoundInfoResponse, RoundStatus } from "@neon-dusk/shared";
 import { ATTRIBUTE_KEYS, BASE_ATTRIBUTES, SOFT_CAP } from "@neon-dusk/shared";
 import { useAuthStore } from "@/stores/auth";
 import { ATTRIBUTE_LABELS, ORIGIN_LABELS, ROLE_LABELS } from "@/lib/labels";
 import { formatCountdown } from "@/lib/format";
+import { api } from "@/api/client";
 import Leaderboard from "@/components/Leaderboard";
+
+/** Translate round status to Portuguese display label. */
+const ROUND_STATUS_LABEL: Record<RoundStatus, string> = {
+  active: "ATIVO",
+  ended: "ENCERRADO",
+  intermission: "INTERVALO",
+};
 
 /**
  * Runner dashboard: character card, NIL bar with live regen countdown,
@@ -44,6 +52,14 @@ export default function DashboardView() {
 
   const [countdown, setCountdown] = useState(0);
   const countdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [roundInfo, setRoundInfo] = useState<RoundInfoResponse | null>(null);
+
+  useEffect(() => {
+    api.get<RoundInfoResponse>("/api/round").then(setRoundInfo).catch(() => {
+      // Round info unavailable — keep the null state which shows nothing.
+    });
+  }, []);
 
   function syncCountdown(): void {
     setCountdown(useAuthStore.getState().nilStatus?.nextTickSeconds ?? 0);
@@ -116,9 +132,11 @@ export default function DashboardView() {
                   {ROLE_LABELS[character.role]} · Origem: {ORIGIN_LABELS[character.origin]}
                 </p>
               </div>
-              <span className="self-start font-data text-xs uppercase tracking-widest border border-nd-cyan/40 text-nd-cyan rounded-terminal px-2 py-1">
-                ROUND 1 // ATIVO
-              </span>
+              {roundInfo && (
+                <span className="self-start font-data text-xs uppercase tracking-widest border border-nd-cyan/40 text-nd-cyan rounded-terminal px-2 py-1">
+                  ROUND {roundInfo.roundNumber} // {ROUND_STATUS_LABEL[roundInfo.status]}
+                </span>
+              )}
             </div>
 
             {/* NIL — neural load bar (Feature #2) */}
