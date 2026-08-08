@@ -21,7 +21,8 @@ import { seedGigs } from "../db/seed";
 import { db } from "../db";
 import { users } from "../db/schema";
 
-const REDIS_TEST_DB = "redis://localhost:56379/21";
+// DB 0: redis:7-alpine default max 16 databases (0-15)
+const REDIS_TEST_DB = "redis://localhost:56379/0";
 const PASSWORD = "StrongPass123!";
 // ADMIN_KEY matches process.env.ADMIN_API_KEY set by setup.ts
 const ADMIN_KEY = "test-admin-key-that-is-at-least-32-characters-long";
