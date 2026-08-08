@@ -40,13 +40,13 @@ export async function createCharacter(
     throw new AppError(
       400,
       "INVALID_ATTRIBUTES",
-      `Attribute total must be exactly ${ATTR_TOTAL} (currently ${total})`,
+      `Total de atributos deve ser exatamente ${ATTR_TOTAL} (atualmente ${total})`,
     );
   }
 
   const existing = await db.select().from(characters).where(eq(characters.userId, userId)).limit(1);
   if (existing.length) {
-    throw new AppError(409, "CHARACTER_EXISTS", "You already have a character");
+    throw new AppError(409, "CHARACTER_EXISTS", "Você já tem um personagem");
   }
 
   const nameTaken = await db
@@ -55,7 +55,7 @@ export async function createCharacter(
     .where(eq(sql`lower(${characters.name})`, input.name.trim().toLowerCase()))
     .limit(1);
   if (nameTaken.length) {
-    throw new AppError(409, "NAME_TAKEN", "That name is already taken");
+    throw new AppError(409, "NAME_TAKEN", "Esse nome já está em uso");
   }
 
   try {
@@ -73,7 +73,7 @@ export async function createCharacter(
   } catch (err) {
     // Safety net for the case-insensitive unique name index (lower(name)).
     if (isUniqueViolation(err)) {
-      throw new AppError(409, "NAME_TAKEN", "That name is already taken");
+      throw new AppError(409, "NAME_TAKEN", "Esse nome já está em uso");
     }
     throw err;
   }

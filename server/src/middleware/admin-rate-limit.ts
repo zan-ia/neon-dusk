@@ -28,7 +28,7 @@ export function checkAdminRateLimit(redis: Redis) {
     }
     const count = results[0][1] as number;
     if (count > ADMIN_RATE_LIMIT.max) {
-      throw new AppError(429, "ADMIN_RATE_LIMITED", "Too many admin requests. Try again later.");
+      throw new AppError(429, "ADMIN_RATE_LIMITED", "Muitas requisições admin. Tente novamente mais tarde.");
     }
   };
 }

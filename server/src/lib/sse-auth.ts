@@ -21,13 +21,13 @@ export async function sseAuthenticate(request: FastifyRequest): Promise<void> {
         : undefined;
 
   if (!token) {
-    throw new AppError(401, "UNAUTHORIZED", "Missing, invalid or expired access token");
+    throw new AppError(401, "UNAUTHORIZED", "Token de acesso ausente, inválido ou expirado");
   }
 
   try {
     request.user = await request.server.jwt.verify<AccessTokenPayload>(token);
   } catch {
-    throw new AppError(401, "UNAUTHORIZED", "Missing, invalid or expired access token");
+    throw new AppError(401, "UNAUTHORIZED", "Token de acesso ausente, inválido ou expirado");
   }
 
   // Telemetry (ND-007): mark the user active for 24h. Fire-and-forget — a

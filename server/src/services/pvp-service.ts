@@ -110,7 +110,7 @@ export async function getAttackableTargets(
   void cursor;
 
   const [attacker] = await db.select().from(characters).where(eq(characters.userId, userId)).limit(1);
-  if (!attacker) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+  if (!attacker) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
   if (await redis.get(`${PVP_COOLDOWN_KEY}${attacker.id}`)) {
     return { targets: [] };
@@ -174,15 +174,15 @@ export async function executeAttack(
 ): Promise<PvpCombatResult> {
   // Cheap, non-transactional guards first — fail fast before locking rows.
   const [attackerRow] = await db.select().from(characters).where(eq(characters.userId, userId)).limit(1);
-  if (!attackerRow) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+  if (!attackerRow) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
   const attackerId = attackerRow.id;
 
   if (targetId === attackerId) {
-    throw new AppError(400, "CANNOT_ATTACK_SELF", "You cannot attack yourself");
+    throw new AppError(400, "CANNOT_ATTACK_SELF", "Você não pode atacar a si mesmo");
   }
 
   if (await redis.get(`${PVP_COOLDOWN_KEY}${attackerId}`)) {
-    throw new AppError(429, "PVP_COOLDOWN", "You are still on attack cooldown");
+    throw new AppError(429, "PVP_COOLDOWN", "Você ainda está em cooldown de ataque");
   }
 
   const result = await db.transaction(async (tx) => {
@@ -192,7 +192,7 @@ export async function executeAttack(
       .where(eq(characters.id, attackerId))
       .for("update")
       .limit(1);
-    if (!attacker) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+    if (!attacker) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
     const [defender] = await tx
       .select()
@@ -200,14 +200,14 @@ export async function executeAttack(
       .where(eq(characters.id, targetId))
       .for("update")
       .limit(1);
-    if (!defender) throw new AppError(404, "TARGET_NOT_FOUND", "Target character not found");
+    if (!defender) throw new AppError(404, "TARGET_NOT_FOUND", "Personagem alvo não encontrado");
 
     if (isImmune(defender.createdAt)) {
-      throw new AppError(400, "TARGET_IMMUNE", "This player is immune to attacks");
+      throw new AppError(400, "TARGET_IMMUNE", "Este jogador está imune a ataques");
     }
 
     if (attacker.nil < PVP_NIL_COST) {
-      throw new AppError(400, "INSUFFICIENT_NIL", `Need ${PVP_NIL_COST} NIL to attack`);
+      throw new AppError(400, "INSUFFICIENT_NIL", `Precisa de ${PVP_NIL_COST} NIL para atacar`);
     }
 
     // Power bracket: effective (non-random) power must be within ±10.
@@ -216,7 +216,7 @@ export async function executeAttack(
     const attackerBase = attacker.body + attacker.reflexes + attackerChrome;
     const defenderBase = defender.body + defender.reflexes + defenderChrome;
     if (Math.abs(attackerBase - defenderBase) > POWER_RANGE) {
-      throw new AppError(400, "POWER_RANGE_EXCEEDED", "Power difference is too large to attack");
+      throw new AppError(400, "POWER_RANGE_EXCEEDED", "Diferença de poder muito grande para atacar");
     }
 
     // Anti-grief limits (design: weekly attacks on the target).
@@ -330,7 +330,7 @@ export async function executeAttack(
         .where(and(eq(characterWallets.id, loserWalletRow!.id), eq(characterWallets.version, loserWallet.version)))
         .returning();
       if (!updatedLoser) {
-        throw new AppError(409, "CONCURRENCY_CONFLICT", "Wallet changed concurrently. Try again.");
+        throw new AppError(409, "CONCURRENCY_CONFLICT", "Carteira alterada concorrentemente. Tente novamente.");
       }
       await tx.insert(transactionLog).values({
         characterId: loserId,
@@ -371,7 +371,7 @@ export async function executeAttack(
         .where(and(eq(characterWallets.characterId, winnerId), eq(characterWallets.version, winnerWallet.version)))
         .returning();
       if (!updatedWinner) {
-        throw new AppError(409, "CONCURRENCY_CONFLICT", "Wallet changed concurrently. Try again.");
+        throw new AppError(409, "CONCURRENCY_CONFLICT", "Carteira alterada concorrentemente. Tente novamente.");
       }
       await tx.insert(transactionLog).values({
         characterId: winnerId,
@@ -452,7 +452,7 @@ export async function getCombatHistory(
     .from(characters)
     .where(eq(characters.userId, userId))
     .limit(1);
-  if (!character) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+  if (!character) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
   const attackerChar = alias(characters, "attacker");
   const defenderChar = alias(characters, "defender");

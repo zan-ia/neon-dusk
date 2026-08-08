@@ -73,7 +73,7 @@ export async function ensureWallet(characterId: string, tx: Tx): Promise<WalletS
       .limit(1);
 
     if (!existing) {
-      throw new AppError(500, "WALLET_CREATE_FAILED", "Failed to create wallet");
+      throw new AppError(500, "WALLET_CREATE_FAILED", "Falha ao criar carteira");
     }
     return {
       balance: existing.balance,
@@ -116,7 +116,7 @@ export async function requireCharacterId(userId: string): Promise<string> {
     .where(eq(characters.userId, userId))
     .limit(1);
 
-  if (!character) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+  if (!character) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
   return character.id;
 }
 
@@ -249,11 +249,11 @@ export async function transfer(
         throw new AppError(
           409,
           "CONCURRENCY_CONFLICT",
-          "Too many concurrent operations. Try again.",
+          "Muitas operações concorrentes. Tente novamente.",
         );
       }
       if (err instanceof Error && err.message === "Insufficient funds") {
-        throw new AppError(400, "INSUFFICIENT_FUNDS", "Not enough eddies");
+        throw new AppError(400, "INSUFFICIENT_FUNDS", "Eddies insuficientes");
       }
       throw err;
     }
@@ -261,7 +261,7 @@ export async function transfer(
 
   // Defensive: the loop above always returns or throws, but TS control-flow
   // analysis cannot prove it — keep an explicit terminal throw.
-  throw new AppError(409, "CONCURRENCY_CONFLICT", "Too many concurrent operations. Try again.");
+  throw new AppError(409, "CONCURRENCY_CONFLICT", "Muitas operações concorrentes. Tente novamente.");
 }
 
 /**
@@ -326,7 +326,7 @@ export async function getVendor(vendorId: string): Promise<{
 }> {
   const [vendor] = await db.select().from(vendors).where(eq(vendors.id, vendorId)).limit(1);
 
-  if (!vendor) throw new AppError(404, "VENDOR_NOT_FOUND", "Vendor not found");
+  if (!vendor) throw new AppError(404, "VENDOR_NOT_FOUND", "Vendedor não encontrado");
 
   const inventory = await db
     .select()
@@ -369,7 +369,7 @@ export async function buyFromVendor(
 }> {
   // Validate input
   if (!Number.isInteger(quantity) || quantity < 1) {
-    throw new AppError(400, "INVALID_QUANTITY", "Quantity must be a positive integer");
+    throw new AppError(400, "INVALID_QUANTITY", "Quantidade deve ser um número inteiro positivo");
   }
 
   return db.transaction(async (tx) => {
@@ -386,11 +386,11 @@ export async function buyFromVendor(
       )
       .limit(1);
 
-    if (!item) throw new AppError(404, "ITEM_NOT_FOUND", "Item not found at this vendor");
+    if (!item) throw new AppError(404, "ITEM_NOT_FOUND", "Item não encontrado neste vendedor");
 
     // 2. Check stock (stock >= 0 means limited, -1 means unlimited)
     if (item.stock >= 0 && item.stock < quantity) {
-      throw new AppError(400, "OUT_OF_STOCK", `Only ${item.stock} available`);
+      throw new AppError(400, "OUT_OF_STOCK", `Apenas ${item.stock} disponíveis`);
     }
 
     // 3. Get wallet (seed on first use)

@@ -15,7 +15,7 @@ export async function authenticate(request: FastifyRequest): Promise<void> {
   try {
     await request.jwtVerify();
   } catch {
-    throw new AppError(401, "UNAUTHORIZED", "Missing, invalid or expired access token");
+    throw new AppError(401, "UNAUTHORIZED", "Token de acesso ausente, inválido ou expirado");
   }
 
   // Telemetry (ND-007): mark the user active for 24h. Fire-and-forget — a

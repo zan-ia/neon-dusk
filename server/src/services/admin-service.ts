@@ -195,7 +195,7 @@ export async function banPlayer(
     .returning({ id: characters.id });
 
   if (!updated) {
-    throw new AppError(404, "NOT_FOUND", "Character not found");
+    throw new AppError(404, "NOT_FOUND", "Personagem não encontrado");
   }
 
   // Fire-and-forget audit log.
@@ -227,7 +227,7 @@ export async function unbanPlayer(
     .returning({ id: characters.id });
 
   if (!updated) {
-    throw new AppError(404, "NOT_FOUND", "Character not found");
+    throw new AppError(404, "NOT_FOUND", "Personagem não encontrado");
   }
 
   void db

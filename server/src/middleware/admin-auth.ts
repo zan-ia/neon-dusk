@@ -16,7 +16,7 @@ import { env } from "../env";
 export async function requireAdminApiKey(request: FastifyRequest): Promise<void> {
   const apiKey = request.headers["x-api-key"];
   if (typeof apiKey !== "string" || apiKey !== env.ADMIN_API_KEY) {
-    throw new AppError(401, "UNAUTHORIZED", "Invalid admin API key");
+    throw new AppError(401, "UNAUTHORIZED", "Chave de API admin inválida");
   }
 }
 
@@ -30,6 +30,6 @@ export { requireAdminApiKey as requireAdmin };
  */
 export async function requireAdminRole(request: FastifyRequest): Promise<void> {
   if (request.user.role !== "admin") {
-    throw new AppError(403, "FORBIDDEN", "Admin access required");
+    throw new AppError(403, "FORBIDDEN", "Acesso admin necessário");
   }
 }

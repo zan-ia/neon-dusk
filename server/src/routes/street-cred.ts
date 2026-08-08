@@ -47,7 +47,7 @@ export async function streetCredRoutes(app: FastifyInstance, opts: StreetCredRou
   app.get("/street-cred", { preHandler: [authenticate] }, async (request): Promise<StreetCredInfo> => {
     const characterId = await requireCharacterId(request.user.sub);
     const [row] = await db.select().from(characters).where(eq(characters.id, characterId)).limit(1);
-    if (!row) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+    if (!row) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
     const now = new Date();
     const { effectiveScore } = calculateDecay(
@@ -136,7 +136,7 @@ export async function streetCredRoutes(app: FastifyInstance, opts: StreetCredRou
           .from(characters)
           .where(eq(characters.id, characterId))
           .limit(1);
-        if (!row) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+        if (!row) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
         // Clamp to [1, 100 - current]; already at the cap → 0 (no-op award).
         const room = 100 - row.streetCred;
@@ -155,7 +155,7 @@ export async function streetCredRoutes(app: FastifyInstance, opts: StreetCredRou
             .where(eq(characters.id, characterId))
             .returning({ streetCred: characters.streetCred, maxStreetCredAchieved: characters.maxStreetCredAchieved });
 
-          if (!updated) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+          if (!updated) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
           // Audit trail. transaction_log's CHECK requires
           // balance_after - balance_before = amount — the SC delta satisfies it.

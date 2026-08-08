@@ -55,7 +55,7 @@ export function toNilStatus(row: typeof characters.$inferSelect): NilStatus {
 async function findCharacter(userId: string): Promise<typeof characters.$inferSelect> {
   const [row] = await db.select().from(characters).where(eq(characters.userId, userId)).limit(1);
   if (!row) {
-    throw new AppError(404, "CHARACTER_NOT_FOUND", "No character found for this account");
+    throw new AppError(404, "CHARACTER_NOT_FOUND", "Nenhum personagem encontrado para esta conta");
   }
   return row;
 }
@@ -84,7 +84,7 @@ export async function consumeNil(userId: string, amount: number): Promise<NilCon
   const { newNil: current } = calculateRegen(row.nil, row.maxNil, row.nilUpdatedAt);
 
   if (amount > current) {
-    throw new AppError(400, "INSUFFICIENT_NIL", `Not enough NIL (have ${current}, need ${amount})`);
+    throw new AppError(400, "INSUFFICIENT_NIL", `NIL insuficiente (tem ${current}, precisa de ${amount})`);
   }
 
   // Atomic spend: persist regen AND deduct in one UPDATE. `regened` is
@@ -117,7 +117,7 @@ export async function consumeNil(userId: string, amount: number): Promise<NilCon
     .returning();
 
   if (!updated) {
-    throw new AppError(400, "INSUFFICIENT_NIL", "Not enough NIL");
+    throw new AppError(400, "INSUFFICIENT_NIL", "NIL insuficiente");
   }
 
   return { consumed: amount, remaining: updated.nil, status: toNilStatus(updated) };
@@ -137,7 +137,7 @@ export async function useStim(redis: Redis, userId: string): Promise<NilStimResp
   const acquired = await redis.set(key, "1", "EX", NIL_SYN_CAFE_COOLDOWN_S, "NX");
   if (acquired !== "OK") {
     const ttl = await redis.ttl(key);
-    throw new AppError(400, "NIL_STIM_COOLDOWN", "Syn-café is still on cooldown", {
+    throw new AppError(400, "NIL_STIM_COOLDOWN", "Syn-café ainda está em cooldown", {
       retryAfterSeconds: ttl > 0 ? ttl : NIL_SYN_CAFE_COOLDOWN_S,
     });
   }
@@ -145,7 +145,7 @@ export async function useStim(redis: Redis, userId: string): Promise<NilStimResp
   if (current >= row.maxNil) {
     // Don't burn the cooldown for a zero-gain stim.
     await redis.del(key);
-    throw new AppError(400, "NIL_FULL", "NIL is already full");
+    throw new AppError(400, "NIL_FULL", "NIL já está cheio");
   }
 
   const newNil = Math.min(row.maxNil, current + NIL_SYN_CAFE_AMOUNT);
@@ -170,7 +170,7 @@ export async function useStim(redis: Redis, userId: string): Promise<NilStimResp
   if (!updated) {
     // Don't waste the cooldown on a failed write — let the player retry.
     await redis.del(key);
-    throw new AppError(409, "NIL_CONCURRENT_MODIFICATION", "NIL was modified by another action, try again");
+    throw new AppError(409, "NIL_CONCURRENT_MODIFICATION", "NIL foi modificado por outra ação, tente novamente");
   }
 
   return { added: newNil - current, status: toNilStatus(updated) };

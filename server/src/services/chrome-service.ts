@@ -87,7 +87,7 @@ export async function installChrome(
       ),
     )
     .limit(1);
-  if (!definition) throw new AppError(404, "CHROME_NOT_FOUND", "Chrome not found");
+  if (!definition) throw new AppError(404, "CHROME_NOT_FOUND", "Chrome não encontrado");
 
   // 2. Vendor must stock this chrome (item_type='CHROME', item_id=slug)
   const [stockItem] = await db
@@ -102,7 +102,7 @@ export async function installChrome(
     )
     .limit(1);
   if (!stockItem) {
-    throw new AppError(404, "ITEM_NOT_FOUND", "This ripperdoc does not stock that chrome");
+    throw new AppError(404, "ITEM_NOT_FOUND", "Este ripperdoc não tem esse chrome em estoque");
   }
 
   return db.transaction(async (tx) => {
@@ -112,7 +112,7 @@ export async function installChrome(
       .from(characters)
       .where(eq(characters.id, characterId))
       .limit(1);
-    if (!character) throw new AppError(404, "NO_CHARACTER", "Character not found");
+    if (!character) throw new AppError(404, "NO_CHARACTER", "Personagem não encontrado");
 
     // 4. Current loadout — duplicate check + per-slot count
     const loadout = await tx
@@ -125,7 +125,7 @@ export async function installChrome(
       .where(eq(installedChrome.characterId, characterId));
 
     if (loadout.some((row) => row.definitionId === chromeDefinitionId)) {
-      throw new AppError(409, "ALREADY_INSTALLED", "Chrome already installed");
+      throw new AppError(409, "ALREADY_INSTALLED", "Chrome já instalado");
     }
 
     // 5. Slot capacity (one definition per install, so counts never double)
@@ -140,7 +140,7 @@ export async function installChrome(
 
     // 6. Humanity cost
     if (!validateHumanityAfterInstall(character.humanity, definition.humanityCost)) {
-      throw new AppError(400, "HUMANITY_TOO_LOW", "Not enough humanity to install this chrome");
+      throw new AppError(400, "HUMANITY_TOO_LOW", "Humanidade insuficiente para instalar este chrome");
     }
 
     // 7. Wallet debit with optimistic locking (pattern of buyFromVendor)
@@ -148,7 +148,7 @@ export async function installChrome(
     const price = stockItem.price; // vendor price is authoritative
     const availableFunds = wallet.balance - wallet.escrow;
     if (availableFunds < price) {
-      throw new AppError(400, "INSUFFICIENT_FUNDS", `Need ${price} eddies, have ${availableFunds}`);
+      throw new AppError(400, "INSUFFICIENT_FUNDS", `Precisa de ${price} eddies, tem ${availableFunds}`);
     }
 
     const result = transferEddies(wallet, -price, {
@@ -175,7 +175,7 @@ export async function installChrome(
       )
       .returning();
     if (!updated) {
-      throw new AppError(409, "CONCURRENCY_CONFLICT", "Concurrent modification detected. Try again.");
+      throw new AppError(409, "CONCURRENCY_CONFLICT", "Modificação concorrente detectada. Tente novamente.");
     }
 
     // Audit entry
@@ -200,7 +200,7 @@ export async function installChrome(
         .returning();
     } catch (err) {
       if (isUniqueViolation(err)) {
-        throw new AppError(409, "ALREADY_INSTALLED", "Chrome already installed");
+        throw new AppError(409, "ALREADY_INSTALLED", "Chrome já instalado");
       }
       throw err;
     }
@@ -271,14 +271,14 @@ export async function uninstallChrome(
       ),
     )
     .limit(1);
-  if (!row) throw new AppError(404, "INSTALLED_CHROME_NOT_FOUND", "Installed chrome not found");
+  if (!row) throw new AppError(404, "INSTALLED_CHROME_NOT_FOUND", "Chrome instalado não encontrado");
 
   const [character] = await db
     .select({ humanity: characters.humanity })
     .from(characters)
     .where(eq(characters.id, characterId))
     .limit(1);
-  if (!character) throw new AppError(404, "NO_CHARACTER", "Character not found");
+  if (!character) throw new AppError(404, "NO_CHARACTER", "Personagem não encontrado");
 
   await db.transaction(async (tx) => {
     await tx.delete(installedChrome).where(eq(installedChrome.id, installedChromeId));
@@ -322,7 +322,7 @@ export async function listInstalledChrome(characterId: string): Promise<Installe
     .from(characters)
     .where(eq(characters.id, characterId))
     .limit(1);
-  if (!character) throw new AppError(404, "NO_CHARACTER", "Character not found");
+  if (!character) throw new AppError(404, "NO_CHARACTER", "Personagem não encontrado");
 
   const rows = await db
     .select({

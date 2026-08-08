@@ -47,7 +47,7 @@ describe("api client", () => {
       "fetch",
       vi
         .fn()
-        .mockResolvedValue(jsonResponse({ error: "NOT_FOUND", message: "Gig not found" }, 404)),
+        .mockResolvedValue(jsonResponse({ error: "NOT_FOUND", message: "Gig não encontrada" }, 404)),
     );
 
     const err = await api.get("/gigs/unknown").catch((e: unknown) => e);
@@ -56,7 +56,7 @@ describe("api client", () => {
     expect(err).toMatchObject({
       status: 404,
       code: "NOT_FOUND",
-      message: "Gig not found",
+      message: "Gig não encontrada",
     });
   });
 

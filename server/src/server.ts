@@ -2,6 +2,7 @@ import { env } from "./env";
 import { buildApp } from "./app";
 import { startRoundCheckCron } from "./cron/round-check";
 import { seedAdminAccount } from "./seed/admin-seed";
+import { seedAll } from "./db/seed";
 
 async function main() {
   const app = await buildApp({ env });
@@ -21,6 +22,8 @@ async function main() {
     app.log.info(`NEON//DUSK running at http://${env.HOST}:${env.PORT}`);
     // ND-052: seed admin account from env vars (idempotent).
     await seedAdminAccount();
+    // ND-054: seed content catalog (chrome, vendors, gigs, loot) — idempotent upserts.
+    await seedAll();
     // ND-017: hourly round-expiry check (single-instance MVP, ADR-4).
     startRoundCheckCron(app);
   } catch (err) {

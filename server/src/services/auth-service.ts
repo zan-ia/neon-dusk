@@ -87,7 +87,7 @@ export async function registerUser(
   await checkRateLimit(redis, `register:${input.email}`, REGISTER_RATE_LIMIT.max, REGISTER_RATE_LIMIT.windowMs);
 
   if (await findUserByEmail(input.email)) {
-    throw new AppError(409, "EMAIL_TAKEN", "An account with this email already exists");
+    throw new AppError(409, "EMAIL_TAKEN", "Já existe uma conta com este email");
   }
 
   const passwordHash = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
@@ -107,7 +107,7 @@ export async function loginUser(
   const user = await findUserByEmail(input.email);
   // Same error for unknown email vs wrong password (no account enumeration).
   if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
-    throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password");
+    throw new AppError(401, "INVALID_CREDENTIALS", "Email ou senha inválidos");
   }
 
   return buildAuthResponse(app, redis, user);
@@ -121,12 +121,12 @@ export async function refreshSession(
 ): Promise<AuthResponse> {
   const userId = await consumeRefreshToken(redis, input.refreshToken);
   if (!userId) {
-    throw new AppError(401, "INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired");
+    throw new AppError(401, "INVALID_REFRESH_TOKEN", "Refresh token inválido ou expirado");
   }
 
   const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user.length) {
-    throw new AppError(401, "INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired");
+    throw new AppError(401, "INVALID_REFRESH_TOKEN", "Refresh token inválido ou expirado");
   }
 
   return buildAuthResponse(app, redis, user[0]);
@@ -141,7 +141,7 @@ export async function logoutUser(redis: Redis, token: string): Promise<void> {
 export async function getUserWithCharacter(userId: string): Promise<UserWithCharacter> {
   const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user.length) {
-    throw new AppError(404, "USER_NOT_FOUND", "User no longer exists");
+    throw new AppError(404, "USER_NOT_FOUND", "Usuário não existe mais");
   }
   return { user: toPublicUser(user[0]), character: await findCharacterByUser(userId) };
 }

@@ -205,7 +205,7 @@ export async function listAvailableGigs(characterId: string): Promise<GigBoardRe
     .from(characters)
     .where(eq(characters.id, characterId))
     .limit(1);
-  if (!character) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+  if (!character) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
   const attrs = toAttributes(character);
   const now = new Date();
@@ -259,14 +259,14 @@ export async function getGigDetail(
   gigId: string,
 ): Promise<GigDetailResponse> {
   const [gig] = await db.select().from(gigs).where(eq(gigs.id, gigId)).limit(1);
-  if (!gig) throw new AppError(404, "GIG_NOT_FOUND", "Gig not found");
+  if (!gig) throw new AppError(404, "GIG_NOT_FOUND", "Gig não encontrada");
 
   const [character] = await db
     .select()
     .from(characters)
     .where(eq(characters.id, characterId))
     .limit(1);
-  if (!character) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+  if (!character) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
   const meetsRequirements =
     meetsStatRequirements(toAttributes(character), gig.requiredStats) &&
@@ -314,10 +314,10 @@ export async function acceptGig(characterId: string, gigId: string): Promise<Gig
       .from(characters)
       .where(eq(characters.id, characterId))
       .limit(1);
-    if (!character) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+    if (!character) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
     const [gig] = await tx.select().from(gigs).where(eq(gigs.id, gigId)).limit(1);
-    if (!gig) throw new AppError(404, "GIG_NOT_FOUND", "Gig not found");
+    if (!gig) throw new AppError(404, "GIG_NOT_FOUND", "Gig não encontrada");
 
     // Lock the row: INSERT first (unique character_id) — a concurrent accept
     // loses the race here and fails BEFORE any NIL is spent.
@@ -327,7 +327,7 @@ export async function acceptGig(characterId: string, gigId: string): Promise<Gig
       .onConflictDoNothing()
       .returning();
     if (!inserted) {
-      throw new AppError(400, "ALREADY_ACTIVE_GIG", "You already have an active gig");
+      throw new AppError(400, "ALREADY_ACTIVE_GIG", "Você já tem uma gig ativa");
     }
 
     try {
@@ -339,7 +339,7 @@ export async function acceptGig(characterId: string, gigId: string): Promise<Gig
         );
       }
       if (!meetsStatRequirements(toAttributes(character), gig.requiredStats)) {
-        throw new AppError(403, "INSUFFICIENT_STATS", "Attributes do not meet the gig requirements");
+        throw new AppError(403, "INSUFFICIENT_STATS", "Atributos não atendem aos requisitos da gig");
       }
 
       const [last] = await tx
@@ -349,11 +349,11 @@ export async function acceptGig(characterId: string, gigId: string): Promise<Gig
         .orderBy(desc(gigHistory.completedAt))
         .limit(1);
       if (last && !isCooldownExpired(last.lastAt, gig.cooldownMinutes)) {
-        throw new AppError(400, "GIG_COOLDOWN", "This gig is still on cooldown");
+        throw new AppError(400, "GIG_COOLDOWN", "Esta gig ainda está em cooldown");
       }
 
       if (!isUnderDailyLimit(await countTodayGigs(tx, characterId))) {
-        throw new AppError(400, "DAILY_GIG_LIMIT", "You have reached today's gig limit");
+        throw new AppError(400, "DAILY_GIG_LIMIT", "Você atingiu o limite diário de gigs");
       }
 
       // NIL spend (in-transaction, mirrors nil-service.consumeNil): persist the
@@ -377,7 +377,7 @@ export async function acceptGig(characterId: string, gigId: string): Promise<Gig
         )
         .returning();
       if (!updated) {
-        throw new AppError(400, "INSUFFICIENT_NIL", `Not enough NIL (need ${gig.nilCost})`);
+        throw new AppError(400, "INSUFFICIENT_NIL", `NIL insuficiente (precisa de ${gig.nilCost})`);
       }
 
       const activeGig: ActiveGig = {
@@ -416,12 +416,12 @@ export async function acceptGig(characterId: string, gigId: string): Promise<Gig
 export async function doLegwork(characterId: string, gigId: string): Promise<ActiveGig> {
   return db.transaction(async (tx) => {
     const active = await queryActiveGig(tx, characterId);
-    if (!active) throw new AppError(404, "NO_ACTIVE_GIG", "No active gig");
-    if (active.gigId !== gigId) throw new AppError(409, "GIG_MISMATCH", "Active gig does not match");
+    if (!active) throw new AppError(404, "NO_ACTIVE_GIG", "Nenhuma gig ativa");
+    if (active.gigId !== gigId) throw new AppError(409, "GIG_MISMATCH", "Gig ativa não corresponde");
 
     const next = canTransition(active.phase, "start_legwork");
     if (!next) {
-      throw new AppError(409, "INVALID_PHASE_TRANSITION", `Cannot start legwork from ${active.phase}`);
+      throw new AppError(409, "INVALID_PHASE_TRANSITION", `Não é possível iniciar legwork a partir de ${active.phase}`);
     }
 
     await tx
@@ -441,11 +441,11 @@ export async function doLegwork(characterId: string, gigId: string): Promise<Act
 export async function executeGig(characterId: string, gigId: string): Promise<GigExecuteResponse> {
   return db.transaction(async (tx) => {
     const active = await queryActiveGig(tx, characterId);
-    if (!active) throw new AppError(404, "NO_ACTIVE_GIG", "No active gig");
-    if (active.gigId !== gigId) throw new AppError(409, "GIG_MISMATCH", "Active gig does not match");
+    if (!active) throw new AppError(404, "NO_ACTIVE_GIG", "Nenhuma gig ativa");
+    if (active.gigId !== gigId) throw new AppError(409, "GIG_MISMATCH", "Gig ativa não corresponde");
 
     const [gig] = await tx.select().from(gigs).where(eq(gigs.id, active.gigId)).limit(1);
-    if (!gig) throw new AppError(404, "GIG_NOT_FOUND", "Gig not found");
+    if (!gig) throw new AppError(404, "GIG_NOT_FOUND", "Gig não encontrada");
 
     const skippedLegwork = active.phase === "meet";
     const next =
@@ -455,7 +455,7 @@ export async function executeGig(characterId: string, gigId: string): Promise<Gi
           ? canTransition("legwork", "execute")
           : null;
     if (!next) {
-      throw new AppError(409, "INVALID_PHASE_TRANSITION", `Cannot execute from ${active.phase}`);
+      throw new AppError(409, "INVALID_PHASE_TRANSITION", `Não é possível executar a partir de ${active.phase}`);
     }
 
     // Gate: if legwork was started, the timer must have elapsed (ND-078).
@@ -475,7 +475,7 @@ export async function executeGig(characterId: string, gigId: string): Promise<Gi
       .from(characters)
       .where(eq(characters.id, characterId))
       .limit(1);
-    if (!character) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+    if (!character) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
     const { primary } = getRelevantStats(gig.type, toAttributes(character));
     const chromeBonus = await getGigSuccessBonus(tx, characterId);
@@ -519,21 +519,21 @@ export async function executeGig(characterId: string, gigId: string): Promise<Gi
 export async function escapeGig(characterId: string, gigId: string): Promise<GigEscapeResponse> {
   return db.transaction(async (tx) => {
     const active = await queryActiveGig(tx, characterId);
-    if (!active) throw new AppError(404, "NO_ACTIVE_GIG", "No active gig");
-    if (active.gigId !== gigId) throw new AppError(409, "GIG_MISMATCH", "Active gig does not match");
+    if (!active) throw new AppError(404, "NO_ACTIVE_GIG", "Nenhuma gig ativa");
+    if (active.gigId !== gigId) throw new AppError(409, "GIG_MISMATCH", "Gig ativa não corresponde");
     if (!canTransition(active.phase, "escape")) {
-      throw new AppError(409, "INVALID_PHASE_TRANSITION", "Escape is only available after executing");
+      throw new AppError(409, "INVALID_PHASE_TRANSITION", "Fuga só está disponível após executar");
     }
 
     const [gig] = await tx.select().from(gigs).where(eq(gigs.id, active.gigId)).limit(1);
-    if (!gig) throw new AppError(404, "GIG_NOT_FOUND", "Gig not found");
+    if (!gig) throw new AppError(404, "GIG_NOT_FOUND", "Gig não encontrada");
 
     const [character] = await tx
       .select()
       .from(characters)
       .where(eq(characters.id, characterId))
       .limit(1);
-    if (!character) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+    if (!character) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
     const [districtHeat] = await tx
       .select({ amount: heatTable.amount })
@@ -575,25 +575,25 @@ export async function escapeGig(characterId: string, gigId: string): Promise<Gig
 export async function wrapUpGig(characterId: string, gigId: string): Promise<GigWrapupResponse> {
   return db.transaction(async (tx) => {
     const active = await queryActiveGig(tx, characterId);
-    if (!active) throw new AppError(404, "NO_ACTIVE_GIG", "No active gig");
-    if (active.gigId !== gigId) throw new AppError(409, "GIG_MISMATCH", "Active gig does not match");
+    if (!active) throw new AppError(404, "NO_ACTIVE_GIG", "Nenhuma gig ativa");
+    if (active.gigId !== gigId) throw new AppError(409, "GIG_MISMATCH", "Gig ativa não corresponde");
     // The wrap_up action is taken while in the escape phase (see the phase
     // machine in game/gigs.ts: escape → wrap_up); wrap_up is terminal and the
     // row is deleted right after, so it is never observed by the client.
     if (active.phase !== "escape") {
-      throw new AppError(409, "INVALID_PHASE_TRANSITION", "Wrap up is only available after escaping");
+      throw new AppError(409, "INVALID_PHASE_TRANSITION", "Wrap up só está disponível após escapar");
     }
     const terminalPhase = canTransition("escape", "wrap_up");
 
     const [gig] = await tx.select().from(gigs).where(eq(gigs.id, active.gigId)).limit(1);
-    if (!gig) throw new AppError(404, "GIG_NOT_FOUND", "Gig not found");
+    if (!gig) throw new AppError(404, "GIG_NOT_FOUND", "Gig não encontrada");
 
     const [character] = await tx
       .select()
       .from(characters)
       .where(eq(characters.id, characterId))
       .limit(1);
-    if (!character) throw new AppError(404, "NO_CHARACTER", "Create a character first");
+    if (!character) throw new AppError(404, "NO_CHARACTER", "Crie um personagem primeiro");
 
     // Outcome: execute failure means the job was botched (no payout, no cred).
     const executed = active.executeOutcome === "success";
@@ -632,7 +632,7 @@ export async function wrapUpGig(characterId: string, gigId: string): Promise<Gig
         )
         .returning();
       if (!updatedWallet) {
-        throw new AppError(409, "CONCURRENCY_CONFLICT", "Wallet changed concurrently. Try again.");
+        throw new AppError(409, "CONCURRENCY_CONFLICT", "Carteira alterada concorrentemente. Tente novamente.");
       }
       await tx.insert(transactionLog).values({
         characterId,

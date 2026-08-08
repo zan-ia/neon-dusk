@@ -78,7 +78,7 @@ export async function checkRateLimit(
 
   if (count > max) {
     const retryAfter = Math.ceil(windowMs / 1000);
-    throw new AppError(429, "RATE_LIMITED", "Too many attempts. Try again later.", { retryAfter });
+    throw new AppError(429, "RATE_LIMITED", "Muitas tentativas. Tente novamente mais tarde.", { retryAfter });
   }
 }
 

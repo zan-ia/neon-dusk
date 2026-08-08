@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { checkCircuitBreaker } from "../middleware/circuit-breaker";
 
 // ND-053 — 3-strikes circuit-breaker gate (checkCircuitBreaker). Unit tests
-// against a dedicated redis db (23). The ban key (`circuit_break:{characterId}`)
+// against a dedicated redis db (15). The ban key (`circuit_break:{characterId}`)
 // is per-character, NOT per-action (ADR-4) — once set, every action throws.
 
 const REDIS_TEST_DB = "redis://localhost:56379/15"; // shared with round-api (sequential fork, self-flushed)

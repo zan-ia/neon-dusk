@@ -62,7 +62,7 @@ describe("errorHandler", () => {
     expect(reply.status).toHaveBeenCalledWith(400);
     expect(reply.send).toHaveBeenCalledWith({
       error: "VALIDATION_ERROR",
-      message: "Invalid request data",
+      message: "Dados inválidos",
       details: [{ path: ["body", "name"], message: "Required" }],
     });
   });
@@ -206,7 +206,7 @@ describe("errorHandler", () => {
     prodHandler(new Error("boom"), mockRequest, reply);
     expect(reply.send).toHaveBeenCalledWith({
       error: "INTERNAL_ERROR",
-      message: "An unexpected error occurred",
+      message: "Erro interno. Tente novamente.",
     });
 
     vi.unstubAllEnvs();

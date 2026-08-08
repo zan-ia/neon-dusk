@@ -2,6 +2,11 @@ import type { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
 import { env } from "../env";
 
+/** System-level errors from the node:net module have a `.code` property. */
+interface SystemError extends Error {
+  code?: string;
+}
+
 function isRedisError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
   // ioredis MaxRetriesPerRequestError — thrown when maxRetriesPerRequest exhausted
@@ -10,6 +15,18 @@ function isRedisError(err: unknown): boolean {
   if ("command" in err) return true;
   // ioredis with enableOfflineQueue:false rejects while disconnected with this message
   if (err.message.startsWith("Stream isn't writeable")) return true;
+  return false;
+}
+
+/** Detects Postgres connection/network errors (ECONNREFUSED, connection terminated, etc.). */
+function isDbConnectionError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const sysCodes = new Set(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "ETIMEDOUT", "ECONNRESET", "EPIPE"]);
+  const code = (err as SystemError).code;
+  if (typeof code === "string" && sysCodes.has(code)) return true;
+  // Catch also when the code is embedded in the message (wrapped errors)
+  if (err.message.includes("ECONNREFUSED")) return true;
+  if (err.message.includes("connection terminated")) return true;
   return false;
 }
 
@@ -66,7 +83,7 @@ export function errorHandler(
   if (error instanceof ZodError) {
     return reply.status(400).send({
       error: "VALIDATION_ERROR",
-      message: "Invalid request data",
+      message: "Dados inválidos",
       details: error.errors.map((e) => ({
         path: e.path,
         message: e.message,
@@ -101,9 +118,18 @@ export function errorHandler(
     });
   }
 
+  // Database connection error — mask infrastructure details even in dev mode
+  if (isDbConnectionError(error)) {
+    request.log.error({ err: error }, "Database connection error");
+    return reply.status(503).send({
+      error: "SERVICE_UNAVAILABLE",
+      message: "Erro de conexão com o banco de dados.",
+    });
+  }
+
   request.log.error({ err: error }, "Unhandled error");
   return reply.status(500).send({
     error: "INTERNAL_ERROR",
-    message: env.NODE_ENV === "production" ? "An unexpected error occurred" : error.message,
+    message: env.NODE_ENV === "production" ? "Erro interno. Tente novamente." : error.message,
   });
 }

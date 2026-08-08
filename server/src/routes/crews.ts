@@ -227,7 +227,7 @@ export async function crewRoutes(app: FastifyInstance, opts: CrewRoutesOptions) 
           throw new AppError(
             409,
             "CONCURRENCY_CONFLICT",
-            "Concurrent modification detected. Try again.",
+            "Modificação concorrente detectada. Tente novamente.",
           );
         }
         await tx.insert(transactionLog).values({
@@ -270,6 +270,28 @@ export async function crewRoutes(app: FastifyInstance, opts: CrewRoutesOptions) 
           joinedAt: member.joinedAt.toISOString(),
         },
       });
+    },
+  );
+
+  // GET /api/crews — list all crews (name, tag, leader, member count).
+  app.get(
+    "/crews",
+    { preHandler: [authenticate] },
+    async (): Promise<Array<{ id: string; name: string; tag: string; leaderId: string; memberCount: number }>> => {
+      const rows = await db
+        .select({
+          id: crews.id,
+          name: crews.name,
+          tag: crews.tag,
+          leaderId: crews.leaderId,
+          memberCount: sql<number>`(
+            SELECT count(*)::int FROM ${crewMembers} WHERE ${crewMembers.crewId} = ${crews.id}
+          )`,
+        })
+        .from(crews)
+        .orderBy(crews.createdAt);
+
+      return rows;
     },
   );
 

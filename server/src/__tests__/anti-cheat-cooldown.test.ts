@@ -102,7 +102,7 @@ describe("checkCooldown (anti-cheat cooldown gate)", () => {
     await expect(preHandler(requestFor(randomUUID()))).rejects.toMatchObject({
       statusCode: 404,
       code: "NO_CHARACTER",
-      message: "Create a character first",
+      message: "Crie um personagem primeiro",
     });
   });
 

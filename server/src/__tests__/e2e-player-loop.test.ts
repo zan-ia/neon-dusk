@@ -26,7 +26,7 @@ import type {
 } from "@neon-dusk/shared";
 import { seedGigs } from "../db/seed";
 
-const REDIS_TEST_DB = "redis://localhost:56379/20";
+const REDIS_TEST_DB = "redis://localhost:56379/0";
 const PASSWORD = "StrongPass123!";
 const ADMIN_KEY = "test-admin-key-that-is-at-least-32-characters-long";
 
